@@ -47,22 +47,14 @@ Kubernetes Cluster: For deploying the monitoring stack.
 Docker: Required for containerization.
 Prometheus, Loki, and Tempo: For collecting logs, metrics, and traces.
 Grafana: For visualizing the data.
-Setup
+
+# Setup
 Clone this repository:
-git clone https://github.com/your-repo/monitoring-stack.git
 
 Deploy the monitoring stack:
-Use Kubernetes manifests or Helm charts provided in the /deploy directory.
+Use Kubernetes manifests or Helm charts provided.
 
-Build the GoLang application:
-bash
-Copy code
-cd go-app
-go build -o app .
-Deploy the GoLang app with logging and tracing enabled in Kubernetes:
-
-Use the /deploy/app-deployment.yaml file for Kubernetes deployment.
-Access Grafana for dashboards:
+# Access Grafana for dashboards:
 
 Set up the Grafana URL and default credentials as per your setup.
 Usage
