@@ -1,0 +1,74 @@
+logging {
+  level  = "debug"
+  format = "logfmt"
+}
+discovery.kubernetes "kubernetes_pods" {
+	role = "pod"
+}
+discovery.relabel "kubernetes_pods" {
+    targets = discovery.kubernetes.kubernetes_pods.targets
+  	rule {
+  	  action = "labelmap"
+  	  regex = "__meta_kubernetes_(namespace|(pod_(node_name|name|container_name|container_image)))"
+  	}
+	
+}
+loki.source.kubernetes "kubernetes_pods" {
+  	targets    = discovery.relabel.kubernetes_pods.output
+  	forward_to = [loki.process.addFields.receiver]
+}
+
+loki.process "addFields" {
+		stage.logfmt {
+			mapping = {
+				loglevel  = "L",
+				message   = "M",
+				timestamp = "T",
+				traceID   = "traceID",
+			}
+		}
+
+		stage.labels {
+			values = {
+				loglevel  = null,
+				message   = null,
+				timestamp = null,
+				traceID   = null,
+			}
+		}
+  	forward_to  = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+	endpoint {
+		url = "http://loki-distributed-stack-gateway.monitoring/loki/api/v1/push"
+	}
+}
+
+
+otelcol.receiver.otlp "default" {
+  http {
+    endpoint="0.0.0.0:4318"
+  }
+
+  output {
+    traces  = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    traces  = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+    client {
+        endpoint = "http://tempo-distributor:4318"
+        tls {
+            insecure             = true
+            insecure_skip_verify = true
+        }
+    }
+}
+
