@@ -1,0 +1,166 @@
+crds:
+  enabled: true
+
+global:
+  rbac:
+    create: true
+alerting: 
+  rules.yaml:
+    apiVersion: 1
+    groups:
+      - orgId: 1
+        name: '{{ .Chart.Name }}_alert_group'
+        folder: Aletr
+        interval: 60s
+        rules:
+          - uid: rule_id_1
+            title: POD_rule
+            condition: A
+            data:
+              - refId: A
+                datasourceUid: '-100'
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 3
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - A
+                      reducer:
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: '-100'
+                  expression: 1==0
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  refId: A
+                  type: math
+            dashboardUid: my_dashboard
+            panelId: 123
+            noDataState: Alerting
+            for: 60s
+            annotations:
+              some_key: some_value
+            labels:
+              team: sre_team_1
+  contactpoints.yaml:
+    secret:
+      apiVersion: 1
+      contactPoints:
+        - orgId: 1
+          name: cp_1
+          receivers:
+            - uid: first_uid
+              type: pagerduty
+              settings:
+                integrationKey: XXX
+                severity: critical
+                class: ping failure
+                component: Grafana
+                group: app-stack
+                summary: |
+                  {{ `{{ include "default.message" . }}` }}
+
+alertmanager:
+
+  ## Deploy alertmanager
+  ##
+  enabled: true
+
+
+  ingress:
+    enabled: true
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
+    annotations: 
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/group.name: 
+      alb.ingress.kubernetes.io/scheme: internal
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /alerts/-/ready
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      alb.ingress.kubernetes.io/certificate-arn: 
+
+    hosts: 
+       - 
+
+    ## Paths to use for ingress rules - one path should match the alertmanagerSpec.routePrefix
+    ##
+    paths: 
+     - /alertmanager
+
+grafana:
+  enabled: true
+
+  ingress:
+    ## If true, Grafana Ingress will be created
+    ##
+    enabled: true
+
+
+    ## Annotations for Grafana Ingress
+    ##
+    annotations: 
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/group.name: 
+      alb.ingress.kubernetes.io/scheme: internal
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /api/health
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      alb.ingress.kubernetes.io/certificate-arn: 
+      # kubernetes.io/ingress.class: nginx
+
+    hosts: 
+      - 
+
+    ## Path for grafana ingress
+    path: /grafana
+
+
+prometheus:
+  enabled: true
+
+
+  # Ingress exposes thanos sidecar outside the cluster
+
+  ingress:
+    enabled: true
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
+    annotations: 
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/group.name: 
+      alb.ingress.kubernetes.io/scheme: 
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /prometheus/-/ready
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      alb.ingress.kubernetes.io/certificate-arn: 
+    labels: {}
+
+
+    hosts: 
+      - 
+
+    ## Paths to use for ingress rules - one path should match the prometheusSpec.routePrefix
+    ##
+    paths: 
+     - /prometheus
+

@@ -1,0 +1,48 @@
+global:
+
+loki:
+  # -- Check https://grafana.com/docs/loki/latest/configuration/#storage_config for more info on how to configure storages
+  storageConfig:
+      aws:
+        s3: s3://ap-south-1
+        bucketnames: test-iot-loki 
+      boltdb_shipper:
+        shared_store: s3
+
+  # -- Structured loki configuration, takes precedence over `loki.config`, `loki.schemaConfig`, `loki.storageConfig`
+  structuredConfig: {}
+    derivedFields:
+      - name: traceID
+        matcher: {source: "trace"}
+        url: "http://tempo-distributor:4318/traces/${__value.raw}"
+        datasource: tempo
+        datasourceUid: tempo
+# -- Provides a reloadable runtime configuration file for some specific configuration
+runtimeConfig: {}
+
+serviceAccount:
+  name: loki
+  annotations: 
+    eks.amazonaws.com/role-arn: "arn:aws:iam::AWS:ACCOUNT:ID:role/ROLE_Name"
+serviceMonitor:
+  enabled: true
+
+# Configuration for the gateway
+gateway:
+  enabled: true
+  ingress:
+    enabled: false
+    annotations:
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/group.name:
+      alb.ingress.kubernetes.io/scheme: 
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+    hosts:
+      - host: ""
+        paths:
+          - path: /
+            pathType: Prefix
